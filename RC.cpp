@@ -45,6 +45,7 @@ public:
     double lastLon;
     int lastReadTime;
 
+    //soft reading (not forced)
     bool read() {
         myGNSS.checkUblox();
         if(nmea.isValid() == true) {
@@ -59,6 +60,7 @@ public:
         } return false;
     }
 
+    //hard reading (forced)
     bool readCoord() {
         myGNSS.checkUblox();
         while(nmea.isValid() == false) {
@@ -70,7 +72,7 @@ public:
         return true;
     }
     
-
+    //distance between coords
     double distanceTo(int i) {
     // convert to radians
     double currentLatRad = convert_to_radians(this->lat);
@@ -88,6 +90,7 @@ public:
     return distance_km * 10000;
     }
 
+    //distance formula for some other use case
     double distanceTo(float lastLat, float lastLon) {
     // convert to radians
     double currentLatRad = convert_to_radians(this->lat);
@@ -105,9 +108,10 @@ public:
     return distance_km;
     }
 
+    //find the degree the car needs to face to be driving towards a coord
     double getHeading(int i) {
-        double desLatCon = convert_to_radians(obstacle[i][0]);
-        double desLonCon = convert_to_radians(obstacle[i][1]);
+        double desLatCon = convert_to_radians(obstacle[i][0]); //obstacle[i][0] represents 'i' set of coords and 0 is lat
+        double desLonCon = convert_to_radians(obstacle[i][1]); //obstacle[i][0] represents 'i' set of coords and 1 is lon
         double latCon = convert_to_radians(this->lat);
         double lonCon = convert_to_radians(this->lon);
         double heading = atan2(desLatCon - latCon, lonCon - desLonCon) * 180.0 / pi;
@@ -148,10 +152,12 @@ public:
 
   void findIntegralDerivative() {
     if(millis() - lastCalculate > calcPeriod) {
-      derivative = constrain(Kd * (lastDiff - diff), -10, 10);
+      derivative = constrain(Kd * (lastDiff - diff), -10, 10); //find the rate of change in error, multiply it by some constant, then contrain it.
       if(abs(diff) < 2) {
         diff = 0;
       }
+
+      //forgetful integral or the integral term in basic terms
       integral_array[bufferIndex] = Ki * diff * calcPeriod;
       bufferIndex = (bufferIndex + 1) % bufferSize;
       bufferCount = min(bufferCount + 1, bufferSize);
@@ -165,6 +171,7 @@ public:
     }
   }
 
+  //steers the car
   void faceTowards(float desDeg) {
     findIntegralDerivative();
     mtr.writeMicroseconds(1260);
@@ -201,33 +208,35 @@ public:
     lcd.print(heading);
   }
 
+  //Generates an arc based of steering angle, speed and time spent predicting. Finds the change in x and y, then converts that to change in lat and lon.
   void predictPosition() {
     int time = (millis() - lastIMURead) / 1000;
     float referenceAngle = heading - 180;
     if(referenceAngle < 0) {
       referenceAngle += 360;
     }
-    referenceAngle = referenceAngle*(pi/180);
+    referenceAngle = referenceAngle*(pi/180); //convert to rads
     const float degreesPerTurnUnit = .75;
-    float wheelDegrees = (abs(steeringUnit) * degreesPerTurnUnit)*(pi/180);
-    //wheelbase * sin of degrees of steering
-    float turningRadius = 24 / tan(wheelDegrees);
-    float arcLength = ((heading-lastHeading) * turningRadius + time*gps.velocity)/2;
-    //angle between two points in radians * turnRadius
-    float angleOfTwoPoints = arcLength/turningRadius;
-    float deltaX = -(steeringUnit/abs(steeringUnit))*(turningRadius*cos(angleOfTwoPoints)-turningRadius);
-    float deltaY = turningRadius*sin(angleOfTwoPoints);
-    float delta_lat = -1*((-deltaX * sin(referenceAngle)) + (deltaY * cos(referenceAngle)));
-    float delta_lon = -1*((deltaX * cos(referenceAngle)) + (deltaY * sin(referenceAngle)));
-    gps.lat += delta_lon / 111320;
+    float wheelDegrees = (abs(steeringUnit) * degreesPerTurnUnit)*(pi/180); //finds the degree of turning at one wheel. (other wheel unaccounted for)
+    float turningRadius = 24 / tan(wheelDegrees);//wheelbase * sin of degrees of steering
+    float arcLength = ((heading-lastHeading) * turningRadius + time*gps.velocity)/2; //finds the length of the arch
+    float angleOfTwoPoints = arcLength/turningRadius; //angle between two points in radians * turnRadius
+    float deltaX = -(steeringUnit/abs(steeringUnit))*(turningRadius*cos(angleOfTwoPoints)-turningRadius); //change in x
+    float deltaY = turningRadius*sin(angleOfTwoPoints); //change in y
+    float delta_lat = -1*((-deltaX * sin(referenceAngle)) + (deltaY * cos(referenceAngle))); //converted to lat 
+    float delta_lon = -1*((deltaX * cos(referenceAngle)) + (deltaY * sin(referenceAngle))); //converted to lon
+    //change where the Gps thinks it is based on approximation
+    gps.lat += delta_lon / 111320; 
     gps.lon += delta_lat / 111320 * cos(gps.lat*(pi/180));
   }
 
   void setSteeringUnit()  
   {
     steeringUnit = constrain((diff/abs(diff))*(43.0 / (1 + exp(-0.06 * abs(diff) +1))-11) + derivative + integral, -30, 30);
-  }
+  }                //        |determines sign| |proportional term, sigmoid              |   |what it says ^ |    |contraints| 
 
+
+  //function basically comes up with two different methods for determining what the speed should be. 1. distance based 2.turn rate based. The return line allows you to give more weight to one method or the other
   int desSpeed(){
     int distance_speed = constrain(exp((.015*gps.distanceTo(obstacleID))+3) + 1260, 1270, 1400);
     int turn_speed = constrain(-1*pow((.6*steeringUnit) + 2, 2) + 1600, 1270, 1400);
@@ -236,6 +245,7 @@ public:
 };
 static Car car; 
 
+//mostly straight from Ublox or other libaries
 void initializeCar() 
 {   
     lcd.clear();
@@ -278,6 +288,7 @@ void initializeCar()
     Serial.println("GPS initialized");       
 }
 
+//for logging purposes
 void enterDiagnosticMode() {
     Serial.println("diagnostic mode entered");
     String inputString = "";
