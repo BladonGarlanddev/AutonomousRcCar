@@ -1,3 +1,5 @@
+//definitely looks like i was in the process of changing project structure lol
+
 #ifndef RC
 #define RC
 #include <Arduino.h>
