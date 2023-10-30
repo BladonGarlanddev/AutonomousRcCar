@@ -116,7 +116,7 @@ public:
         double lonCon = convert_to_radians(this->lon);
         double heading = atan2(desLatCon - latCon, lonCon - desLonCon) * 180.0 / pi;
         heading -= 90;
-    // Adjust heading for northern/southern hemisphere
+
         if (heading < 0) {
             heading += 360;
         } else {
