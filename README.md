@@ -35,7 +35,7 @@ The car possessed an after market ESC which allowed me to control it's drive mot
 A PID controller is a concept where the 3 factors are used in an equation that determines the way in which an object moves. For example, if you wanted your car to steer towards a gps coordinate, you would want that car to turn sharply towards its destination whenever its angle if far from its target. Whenever the car is nearly facing it's desired destination, you shouldn't turn sharply to correct your angle. PID controllers create rules and add behaviors to how your car will maneuver.
 
 ### Error:
-To understand the other terms, we must understand error. Error is a measure of how far you are from a desired target. If a car was facing 0 degrees relative to true north and it's destination was 90 degrees, your error would be 90.  
+To understand the other terms, we must understand error. Error is a measure of how far you are from a desired target. If a car was facing 0 degrees relative to true north and it's destination was 90 degrees, your error would be 90. Error in this context is a signed integer where values can be either negative or positive. Negative error is not better than positive. Any amount of error other than 0 is bad.
 
 ### Proportional:
 Proportional is the first, easiest to understand, and most common factor in steering controllers. Your proportional term is proportional to your error. To visualize, if your car's error was really high, meaning it's far from facing it's destination, you would want it to turn sharply towards it's destination. Conversely, you'd want it to hardly correct its steering angle if close to what it should be. That is the P term. 
