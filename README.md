@@ -18,11 +18,12 @@ The car possessed an after market ESC which allowed me to control it's drive mot
 ## How To Build Your Own
 
 1. Understand your time limit and build options
-   - If you want to build a quick autonomous car, a good IMU, GNSS, and a custom printed circuit board are your best friends.
+   - For the quickest possible build, try a prebuilt. They are specifically designed to allow students to practice thier programming without needing to understand the electronics behind it. 
+   - If you want to build a quick yet custom autonomous car, a good IMU, GNSS, and a custom printed circuit board are your best friends.
    - If you want to build something a little more advanced but time costly, go for a 360 LIDAR and IMU.
    - If you want to prove you're smarter than Elon, try a couple of cameras, LIDAR, IMU, GNSS, and Artifical Intelligence. That'll show those lazies at Tesla.
 
-2. Program it
+3. Program it
    - Since I only programmed the GNSS and IMU type, I will only speak on it. 
    - The first thing you need is the formula to determine the angle between your car and the GPS Coordinate it would like to drive to. In my code, you will find it under the GPS class, its a function called getHeading(). Here is the formula: atan2(detla_lat, delta_lon). 
    - The second thing you need is the distance formula. In my code I used the Haversine formula which is largely unnessecary considering the ways in which the car will be used.
@@ -48,7 +49,7 @@ The integral is integral in making your car run. Lets say the car thinks it's dr
 
 ## Predictive Modeling
 
-The model of autonomous car that has been described is largely depdent on it's GNSS. If you have unstable GNSS signal, your car may behave iraddically. It's not easy to diagnose a car when it behaves iradically. One way of combatting this is to use predictive algorithms for the cars latitude and longitude during an extended period of time without GNSS response. The algorithm I developed basically took the cars rate of turning, it's error, and it's distance to a GPS coordinate and then modeled the arc the car would drive if it wanted to get to its destination and fed that back into the PID controller. If I could explain it clearer, the car basically would take the data available to it at its most recent GNSS reading, make a guess where it would be in the next 250ms, then convert that into a lat and lon and feed it back to the PID cotroller as if it were lat and lon from a GPS
+The model of autonomous car that has been described is largely depdent on it's GNSS. Most GNSS will return a reading every 250ms to 1000ms. A second of driving without signal is quite substaintial. To combat a lack of GNSS data, one might attempt to implement a predictive location algorithm to guess where the car is in space. To visualize one possible method of prediction, imagine the car recieves a fresh GNSS reading. At this point, your car will have the best data to determine what it's next step should be. Allow your car to determine its steering angle with the PID controller you developed. Once you have the steering angle and the speed of the car by taking the difference of two GNSS readings, you can model an arc the car would drive if its steering angle and speed remained constant over the 250 ms interval. You then convert the changes in position your car experiences to changes in lat and lon. You add those changes in lat and lon to your most recent lat and lon readings, then feed that back into the PID controller as if they were actual GNSS coordinates. It's not perfect but it is slighly more accurate than nothing. You could signficantly improve this by making predictions on shorter time frames and by trying to account for the actual path the car will drive as determined by your PID controller.  
 
 ## Physics Simulators
 When working with programming and hardware, the difficulty of combining the two are not added, they're mutliplied. It becomes almost impossible to diagnose issues visually after a point. It's hard to pull diagnostics information that can be linked to the cars behavior in a physical environment. At some point you will need a simulator like Gazebo physics to actually understand and fix issues. 
